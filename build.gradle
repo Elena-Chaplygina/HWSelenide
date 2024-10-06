@@ -41,3 +41,19 @@ test {
     }
     useJUnitPlatform()
 }
+allure {
+    report {
+        version.set("2.18.0")
+    }
+
+    adapter {
+        aspectjWeaver.set(true)
+        aspectjVersion.set("1.9.7")
+
+        frameworks {
+            junit5 {
+                adapterVersion.set("2.18.0")
+            }
+        }
+    }
+}
