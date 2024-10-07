@@ -1,24 +1,24 @@
-import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
 import com.codeborne.selenide.logevents.SelenideLogger;
 import io.qameta.allure.selenide.AllureSelenide;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.params.provider.ValueSources;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static com.codeborne.selenide.Condition.text;
 import static com.codeborne.selenide.Selenide.*;
 import static com.codeborne.selenide.WebDriverConditions.url;
 import static com.codeborne.selenide.WebDriverRunner.getWebDriver;
 import static io.qameta.allure.Allure.step;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SelenideTests {
     SelenideElement checkboxesButton = $x("//a[@href=\"/checkboxes\"]"),
@@ -33,7 +33,7 @@ public class SelenideTests {
             checkboxSecond = $x("//form[@id='checkboxes']/input[@type='checkbox'][1]"),
             select = $x("//select[@id=\"dropdown\"]"),
             input = $x("//input"),
-            notificationElement = $x("//div[@id='flash'][contains(text(), 'Action successful')]"),
+            notificationElement = $x("//div[@id='flash']"),
             closeElement = $x("//a[@href=\"#\"]"),
             addElement = $x("//button[@onclick=\"addElement()\"]");
 
@@ -48,25 +48,14 @@ public class SelenideTests {
     }
 
 
-    @DisplayName("Перейти на страницу Checkboxes. Выделить первый чекбокс, снять выделение со второго чекбокса. " +
-            "Вывести в консоль состояние атрибута checked для каждого чекбокса.")
-
-    @Test
-    void checkCheckboxAndStateVerification() {
-        checkboxesButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/checkboxes"));
-        checkboxFirst.click();
-        System.out.println("Checkbox 1 is checked: " + checkboxFirst.getAttribute("checked"));
-        checkboxSecond.click();
-        System.out.println("Checkbox 2 is checked: " + checkboxSecond.getAttribute("checked"));
-    @ParameterizedTest(name="Порядок нажатия: {0}")
-    @ValueSource(strings={"forward","back"})
+    @ParameterizedTest(name = "Checkboxes. Порядок нажатия: {0}")
+    @ValueSource(strings = {"forward", "back"})
     void checkCheckboxAndStateVerification(String order) {
         step("Переход на страницу Checkboxes и проверка url", () -> {
             checkboxesButton.click();
             webdriver().shouldHave(url("https://the-internet.herokuapp.com/checkboxes"));
         });
-        if(order.equals("forward")){
+        if (order.equals("forward")) {
             step("Нажатие чекбоксов в порядке  checkbox 1, checkbox 2", () -> {
                 checkboxFirst.click();
                 checkboxSecond.click();
@@ -78,21 +67,17 @@ public class SelenideTests {
             });
         }
         step("Вывод в консоль состояние чекбоксов", () -> {
-            System.out.println("Состояние Checkbox 1: " + checkboxFirst.isSelected());
-            System.out.println("Состояние Checkbox 2: " + checkboxSecond.isSelected());
+            System.out.println("Checkbox 1 is checked: " + checkboxFirst.getAttribute("checked"));
+            System.out.println("Checkbox 2 is checked: " + checkboxSecond.getAttribute("checked"));
         });
     }
 
 
-
-    @DisplayName("Перейти на страницу Dropdown. Выбрать первую опцию, вывести в консоль текущий текст элемента dropdown, выбрать вторую опцию, " +
-            "вывести в консоль текущий текст элемента dropdown.")
-
     @CsvSource({
             "1, Option 1",
             "2, Option 2"
-        })
-    @ParameterizedTest(name = "При выборе значения {0} состояние - {1}")
+    })
+    @ParameterizedTest(name = "Dropdown При выборе значения {0} состояние - {1}")
     void dropdownSelectionAndTextOutput(int i, String value) {
         step("Переход на страницу Dropdown и проверка url", () -> {
             dropdownButton.click();
@@ -106,163 +91,165 @@ public class SelenideTests {
             currentText.equals(value);
             System.out.println("текст после выбора первой опции: " + currentText);
         });
-
-
-
-
     }
 
 
-    @DisplayName("Перейти на страницу Disappearing Elements. Добиться отображения 5 элементов, максимум за 10 попыток, " +
-            "если нет, провалить тест с ошибкой.")
-
-    @Test
+    @RepeatedTest(value = 10, name = "Disappearing Elements Попытка {currentRepetition}")
     void disappearingElementsVisibility() {
-        disappearingElementsButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/disappearing_elements"));
-        int count = 0;
-        boolean elementsVisible = false;
-        while (count < 10) {
+        step("Переход на страницу Disappearing Elements и проверка url", () -> {
+            disappearingElementsButton.click();
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/disappearing_elements"));
+        });
+        step("Проверка количества элементов на странице", () -> {
             ElementsCollection elements = $$x("//ul/li");
-            if (elements.size() >= 5) {
-                elementsVisible = true;
-                System.out.println("Элементы отображаются:");
-                break;
+            if (elements.size() != 5) {
+                throw new AssertionError("Не удалось отобразить 5 элементов");
             } else {
-                System.out.println("Попытка " + (count + 1) + ": Найдено " + elements.size() + " элементов. Повторяем...");
-                refresh();
-                count++;
+                System.out.println("Страница содержит 5 элементов");
             }
-        }
-        if (!elementsVisible) {
-            throw new AssertionError("Тест провален: Не удалось отобразить 5 элементов за 10 попыток.");
-        }
+        });
     }
 
 
-    @DisplayName("Перейти на страницу Inputs. Ввести любое случайное число от 1 до 10 000. Вывести в консоль значение элемента Input.")
-
-    @Test
-    void inputFieldRandomNumber() {
-        inputButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/inputs"));
-        input.sendKeys("45145");
-        String value = input.getValue();
-        System.out.println("Поле содержит значение " + value);
-    }
-
-
-    @DisplayName("Перейти на страницу Hovers. Навести курсор на каждую картинку. Вывести в консоль текст, который появляется при наведении.")
-
-    @Test
-    void verifyHoverTextOnImages() {
-        hoversButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/hovers"));
-        for (int i = 1; i <= 3; i++) {
-            $x("//div[@class=\"figure\"][" + i + "]").hover();
-            String hoverText = $x("//div[@class=\"figure\"][" + i + "]").getText();
-            System.out.println("Текст при наведении на изображение " + i + ": " + hoverText);
+    @TestFactory
+    List<DynamicTest> inputFieldRandomNumber() {
+        step("Переход на страницу Inputs и проверка url", () -> {
+            inputButton.click();
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/inputs"));
+        });
+        List<DynamicTest> tests = new ArrayList<>();
+        String[] negativeInputs = {"abc", "@#$%", "\n", " ", "йцуке"};
+        for (String invalidInput : negativeInputs) {
+            tests.add(DynamicTest.dynamicTest("Inputs Негативный тест: Попытка ввести '" + invalidInput + "'", () -> {
+                input.clear();
+                input.sendKeys(invalidInput);
+                Assertions.assertNotEquals(invalidInput, input.getValue());
+            }));
         }
+        tests.add(DynamicTest.dynamicTest(
+                "Inputs Проверка удаления пробелов", () -> {
+                    String testData = " 1 121  ";
+                    input.clear();
+                    input.sendKeys(testData);
+                    assertEquals("1121", input.getValue());
+                }
+        ));
+        tests.add(DynamicTest.dynamicTest(
+                "Inputs Проверка сохранения точки", () -> {
+                    String testData = "23.23";
+                    input.clear();
+                    input.sendKeys(testData);
+                    assertEquals("23.23", input.getValue());
+                }
+        ));
+        tests.add(DynamicTest.dynamicTest(
+                "Inputs Проверка удаления /", () -> {
+                    String testData = "1/2";
+                    input.clear();
+                    input.sendKeys(testData);
+                    assertEquals("12", input.getValue());
+                }
+        ));
+        tests.add(DynamicTest.dynamicTest(
+                "Inputs Проверка замены , на .", () -> {
+                    String testData = "1,02";
+                    input.clear();
+                    input.sendKeys(testData);
+                    assertEquals("1.02", input.getValue());
+                }
+        ));
+        tests.add(DynamicTest.dynamicTest(
+                "Inputs Проверка сохранения ведущих и замыкающих нулей", () -> {
+                    String testData = "001.00000001000";
+                    input.clear();
+                    input.sendKeys(testData);
+                    assertEquals("001.00000001000", input.getValue());
+                }
+        ));
+        return tests;
     }
 
 
-    @DisplayName("Перейти на страницу Notification Message. Кликать до тех пор," +
-            " пока не покажется уведомление Action successful. После каждого неудачного клика закрывать всплывающее уведомление.")
+    @ParameterizedTest(name = "Hover на картинке: {0}")
+    @ValueSource(ints = {3, 1, 2})
+    void verifyHoverTextOnImages(int target) {
+        step("Переход на страницу Hovers и проверка url", () -> {
+            hoversButton.click();
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/hovers"));
+        });
+        step("Проверка текста", () -> {
+            $x("//div[@class=\"figure\"][" + target + "]").hover();
+            String hoverText = $x("//div[@class=\"figure\"][" + target + "]").getText();
+            assertEquals(hoverText, "name: user" + target + "\nView profile");
+            System.out.println("Текст при наведении на изображение " + target + ": " + hoverText);
+        });
+    }
 
-    @Test
+
+    @RepeatedTest(value = 5, name = "Notification Message Попытка {currentRepetition}")
     void verifyActionSuccessfulNotification() {
-        notificationButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/notification_message_rendered"));
-        boolean isNotificationDisplayed = false;
-        while (!isNotificationDisplayed) {
+        step("Переход на страницу Notification Message и проверка url", () -> {
             notificationButton.click();
-            if (notificationElement.is(Condition.visible)) {
-                isNotificationDisplayed = true;
-            } else {
-                closeElement.click();
-                System.out.println("Закрываем уведомление");
-            }
-        }
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/notification_message_rendered"));
+        });
+        step("Проверка всплывающего уведомления, должно быть Successfull", () -> {
+            notificationElement.shouldHave(text("Action successful"));
+        });
     }
 
 
-    @DisplayName("Перейти на страницу Add/Remove Elements. Нажать на кнопку Add Element 5 раз. С каждым нажатием выводить в консоль текст " +
-            "появившегося элемента. Нажать на разные кнопки Delete три раза. Выводить в консоль оставшееся количество кнопок Delete и их тексты.")
-
-    @Test
-    void verifyAddRemoveElementsFunctionality() {
-        addRemoveButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/add_remove_elements/"));
-        for (int i = 1; i <= 5; i++) {
-            addElement.click();
-            SelenideElement element = $x("//div[@id=\"elements\"]/button[" + i + "]");
-            String text = element.getText();
-            System.out.println("Текст на появившейся кнопке " + text);
-        }
-        ElementsCollection deleteElements = $$x("//div[@id=\"elements\"]/button");
-        deleteElements.get(4).click();
-        List<String> textElements = deleteElements.texts();
-        System.out.println("Осталось " + deleteElements.size() + " элементов. Элементы содержат следующий текст: " + String.join(", ", textElements));
-        deleteElements.get(2).click();
-        System.out.println("Осталось " + deleteElements.size() + " элементов. Элементы содержат следующий текст: " + String.join(", ", textElements));
-        deleteElements.get(0).click();
-        System.out.println("Осталось " + deleteElements.size() + " элементов. Элементы содержат следующий текст: " + String.join(", ", textElements));
+    @TestFactory
+    List<DynamicTest> verifyAddRemoveElementsFunctionality() {
+        step("Переход на страницу Add/Remove Elements и проверка url", () -> {
+            addRemoveButton.click();
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/add_remove_elements/"));
+        });
+        return Arrays.asList(
+                        new Object[][]{
+                                {2, 1},
+                                {5, 2},
+                                {1, 3}
+                        }
+                ).stream()
+                .map(data -> DynamicTest.dynamicTest(
+                        "Add/Remove Elements Количество созданий " + data[0] + " количество удалений " + data[1],
+                        () -> {
+                            refresh();
+                            int addCount = (int) data[0];
+                            int removeCount = (int) data[1];
+                            for (int i = 1; i <= addCount; i++) {
+                                addElement.click();
+                                ElementsCollection buttons = $$x("//div/button[@class=\"added-manually\"]");
+                                assertEquals(i, buttons.size());
+                            }
+                            for (int i = 0; i < removeCount; i++) {
+                                ElementsCollection buttons = $$x("//div/button[@class=\"added-manually\"]");
+                                assertEquals(addCount - i, buttons.size());
+                                buttons.get(0).click();
+                            }
+                        }
+                ))
+                .collect(Collectors.toList());
     }
 
 
-    @DisplayName("Перейти на страницу Status Codes. Кликнуть на каждый статус в новом тестовом методе, " +
-            "вывести на экран текст после перехода на страницу статуса 200.")
-
-    @Test
-    void verifyStatusCode200() {
-        statusCodeButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/status_codes"));
-        $x("//a[@href=\"status_codes/200\"]").click();
-        String fullText = $x("//p").getText();
-        String statusText = fullText.split("\\.")[0] + ".";
-        System.out.println(statusText);
-    }
-
-
-    @DisplayName("Перейти на страницу Status Codes. Кликнуть на каждый статус в новом тестовом методе, " +
-            "вывести на экран текст после перехода на страницу статуса 301.")
-
-    @Test
-    void verifyStatusCode301() {
-        statusCodeButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/status_codes"));
-        $x("//a[@href=\"status_codes/301\"]").click();
-        String fullText = $x("//p").getText();
-        String statusText = fullText.split("\\.")[0] + ".";
-        System.out.println(statusText);
-    }
-
-
-    @DisplayName("Перейти на страницу Status Codes. Кликнуть на каждый статус в новом тестовом методе, " +
-            "вывести на экран текст после перехода на страницу статуса 404.")
-
-    @Test
-    void verifyStatusCode404() {
-        statusCodeButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/status_codes"));
-        $x("//a[@href=\"status_codes/404\"]").click();
-        String fullText = $x("//p").getText();
-        String statusText = fullText.split("\\.")[0] + ".";
-        System.out.println(statusText);
-    }
-
-
-    @DisplayName("Перейти на страницу Status Codes. Кликнуть на каждый статус в новом тестовом методе, " +
-            "вывести на экран текст после перехода на страницу статуса 500.")
-
-    @Test
-    void verifyStatusCode500() {
-        statusCodeButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/status_codes"));
-        $x("//a[@href=\"status_codes/500\"]").click();
-        String fullText = $x("//p").getText();
-        String statusText = fullText.split("\\.")[0] + ".";
-        System.out.println(statusText);
+    @CsvSource({
+            "200, This page returned a 200 status code.",
+            "301, This page returned a 301 status code.",
+            "404, This page returned a 404 status code.",
+            "500, This page returned a 500 status code."
+    })
+    @ParameterizedTest(name = "При переходе на страницу статус кода {0} текст - {1}")
+    void verifyStatusCode(int code, String status) {
+        step("Переход на страницу Status Codes и проверка url", () -> {
+            statusCodeButton.click();
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/status_codes"));
+        });
+        step("Проверка текста", () -> {
+            $x("//a[@href=\"status_codes/" + code + "\"]").click();
+            $x("//div[@id=\"content\"]").shouldHave(text(status));
+            System.out.println(status);
+        });
     }
 
 
