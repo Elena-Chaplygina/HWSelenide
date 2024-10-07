@@ -47,9 +47,9 @@ public class SelenideTests {
         checkboxesButton.click();
         webdriver().shouldHave(url("https://the-internet.herokuapp.com/checkboxes"));
         checkboxFirst.click();
-        System.out.println("Checkbox 1 is checked: " + checkboxFirst.isSelected());
+        System.out.println("Checkbox 1 is checked: " + checkboxFirst.getAttribute("checked"));
         checkboxSecond.click();
-        System.out.println("Checkbox 2 is checked: " + checkboxSecond.isSelected());
+        System.out.println("Checkbox 2 is checked: " + checkboxSecond.getAttribute("checked"));
     }
 
 
@@ -102,7 +102,7 @@ public class SelenideTests {
     void inputFieldRandomNumber() {
         inputButton.click();
         webdriver().shouldHave(url("https://the-internet.herokuapp.com/inputs"));
-        input.setValue("45145");
+        input.sendKeys("45145");
         String value = input.getValue();
         System.out.println("Поле содержит значение " + value);
     }
