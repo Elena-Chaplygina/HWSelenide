@@ -2,16 +2,23 @@ import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.logevents.SelenideLogger;
+import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.ValueSources;
 
 import java.util.List;
 
 import static com.codeborne.selenide.Selenide.*;
 import static com.codeborne.selenide.WebDriverConditions.url;
 import static com.codeborne.selenide.WebDriverRunner.getWebDriver;
+import static io.qameta.allure.Allure.step;
 
 public class SelenideTests {
     SelenideElement checkboxesButton = $x("//a[@href=\"/checkboxes\"]"),
@@ -35,7 +42,9 @@ public class SelenideTests {
     void setup() {
         Configuration.browser = "chrome";
         open("https://the-internet.herokuapp.com/");
-
+        SelenideLogger.addListener("AllureSelenide", new AllureSelenide()
+                .screenshots(true)
+                .savePageSource(true));
     }
 
 
@@ -50,22 +59,57 @@ public class SelenideTests {
         System.out.println("Checkbox 1 is checked: " + checkboxFirst.getAttribute("checked"));
         checkboxSecond.click();
         System.out.println("Checkbox 2 is checked: " + checkboxSecond.getAttribute("checked"));
+    @ParameterizedTest(name="Порядок нажатия: {0}")
+    @ValueSource(strings={"forward","back"})
+    void checkCheckboxAndStateVerification(String order) {
+        step("Переход на страницу Checkboxes и проверка url", () -> {
+            checkboxesButton.click();
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/checkboxes"));
+        });
+        if(order.equals("forward")){
+            step("Нажатие чекбоксов в порядке  checkbox 1, checkbox 2", () -> {
+                checkboxFirst.click();
+                checkboxSecond.click();
+            });
+        } else {
+            step("Нажатие чекбоксов в порядке  checkbox 2, checkbox 1", () -> {
+                checkboxSecond.click();
+                checkboxFirst.click();
+            });
+        }
+        step("Вывод в консоль состояние чекбоксов", () -> {
+            System.out.println("Состояние Checkbox 1: " + checkboxFirst.isSelected());
+            System.out.println("Состояние Checkbox 2: " + checkboxSecond.isSelected());
+        });
     }
+
 
 
     @DisplayName("Перейти на страницу Dropdown. Выбрать первую опцию, вывести в консоль текущий текст элемента dropdown, выбрать вторую опцию, " +
             "вывести в консоль текущий текст элемента dropdown.")
 
-    @Test
-    void dropdownSelectionAndTextOutput() {
-        dropdownButton.click();
-        webdriver().shouldHave(url("https://the-internet.herokuapp.com/dropdown"));
-        select.selectOption(1);
-        String currentText = select.getText();
-        System.out.println("текст после выбора первой опции: " + currentText);
-        select.selectOption(2);
-        currentText = select.getText();
-        System.out.println("текст после выбора первой опции: " + currentText);
+    @CsvSource({
+            "1, Option 1",
+            "2, Option 2"
+        })
+    @ParameterizedTest(name = "При выборе значения {0} состояние - {1}")
+    void dropdownSelectionAndTextOutput(int i, String value) {
+        step("Переход на страницу Dropdown и проверка url", () -> {
+            dropdownButton.click();
+            webdriver().shouldHave(url("https://the-internet.herokuapp.com/dropdown"));
+        });
+        step("Выбор dropDown", () -> {
+            select.selectOption(i);
+        });
+        step("Проверка dropDown", () -> {
+            String currentText = select.getText();
+            currentText.equals(value);
+            System.out.println("текст после выбора первой опции: " + currentText);
+        });
+
+
+
+
     }
 
 
