@@ -34,7 +34,6 @@ public class SelenideTests {
             select = $x("//select[@id=\"dropdown\"]"),
             input = $x("//input"),
             notificationElement = $x("//div[@id='flash']"),
-            closeElement = $x("//a[@href=\"#\"]"),
             addElement = $x("//button[@onclick=\"addElement()\"]");
 
 
