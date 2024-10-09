@@ -87,7 +87,7 @@ public class SelenideTests {
         });
         step("Проверка dropDown", () -> {
             String currentText = select.getText();
-            currentText.equals(value);
+            assertEquals(currentText, value);
             System.out.println("текст после выбора первой опции: " + currentText);
         });
     }
