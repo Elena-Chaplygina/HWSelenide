@@ -89,9 +89,9 @@ public class InternetTests {
         });
         step("Поиск выражения", () -> {
             boolean isContainText = false;
-            int attempts=0;
-            while (!isContainText && attempts < 30) {
-                actions().scrollToElement(infiniteScrollPageFooter);
+            int attempt=0;
+            while (!isContainText && attempt < 30) {
+                actions().scrollToElement(infiniteScrollPageFooter).perform();
                 SelenideElement lastElement = textOnScrollPage.last();
                 String elementText = lastElement.getText();
                 isContainText = elementText.contains("Eius");
@@ -99,8 +99,7 @@ public class InternetTests {
                     System.out.println("Текст найден!");
                     break;
                 }
-                infiniteScrollPageFooter.click();
-                attempts++;
+                attempt++;
             }
             if (!isContainText) {
                 throw new AssertionError("Текст 'Eius' не найден после " + 30 + " попыток.");
