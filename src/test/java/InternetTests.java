@@ -1,6 +1,7 @@
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.ex.ElementNotFound;
 import com.codeborne.selenide.logevents.SelenideLogger;
 import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.AfterEach;
@@ -9,11 +10,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
 
+import java.time.Duration;
+
+import static com.codeborne.selenide.Condition.text;
+import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.*;
 import static com.codeborne.selenide.WebDriverConditions.url;
 import static com.codeborne.selenide.WebDriverRunner.getWebDriver;
 import static io.qameta.allure.Allure.step;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 
 public class InternetTests {
@@ -47,6 +52,8 @@ public class InternetTests {
             dragAndDropButton.click();
             webdriver().shouldHave(url("https://the-internet.herokuapp.com/drag_and_drop"));
         });
+        String textA = elementA.getText();
+        String textB = elementB.getText();
         step("Перемещение элемента А на место элемента В", () -> {
             actions().clickAndHold(elementA)
                     .moveToElement(elementB)
@@ -54,10 +61,8 @@ public class InternetTests {
                     .perform();
         });
         step("Проверка что элементы перемещены", () -> {
-            String newTextA = elementA.getText(),
-                    newTextB = elementB.getText();
-            assertEquals(newTextA, "B", "Элемент A должен стать B!");
-            assertEquals(newTextB, "A", "Элемент B должен стать A!");
+            elementA.shouldBe(visible).should(text(textB));
+            elementB.shouldBe(visible).should(text(textA));
         });
     }
 
@@ -74,8 +79,7 @@ public class InternetTests {
         });
         step("Проверка что текст соответствует ожидаемому", () -> {
             String alertText = switchTo().alert().getText();
-            String expectedText = "You selected a context menu";
-            assertEquals(expectedText, alertText);
+            assertThat(alertText).isEqualTo("You selected a context menu");
         });
     }
 
@@ -90,19 +94,16 @@ public class InternetTests {
         step("Поиск выражения", () -> {
             boolean isContainText = false;
             int attempt=0;
-            while (!isContainText && attempt < 30) {
+            while (!textOnScrollPage.last().getText().contains("Eius") && attempt < 20) {
                 actions().scrollToElement(infiniteScrollPageFooter).perform();
-                SelenideElement lastElement = textOnScrollPage.last();
-                String elementText = lastElement.getText();
-                isContainText = elementText.contains("Eius");
+                isContainText = textOnScrollPage.last().getText().contains("Eius");
                 if (isContainText) {
-                    System.out.println("Текст найден!");
-                    break;
+                    textOnScrollPage.last().shouldBe(visible);
                 }
                 attempt++;
             }
             if (!isContainText) {
-                throw new AssertionError("Текст 'Eius' не найден после " + 30 + " попыток.");
+                throw new AssertionError("Текст 'Eius' не найден после " + attempt + " попыток.");
             }
         });
     }
@@ -119,18 +120,18 @@ public class InternetTests {
             String[] keysToPress = {"a", "l", "y", "h", "w", "e", "s", "q", "i", "x"};
             for (String key : keysToPress) {
                 inputOnKeyPressesPage.sendKeys(key);
-                resultOnKeyPressesPage.getText().equals("You entered: " + key.toUpperCase());
+                resultOnKeyPressesPage.shouldHave(text("You entered: " + key.toUpperCase()));
             }
         });
         step("Проверка Enter, Ctrl, Alt, Tab", () -> {
             inputOnKeyPressesPage.sendKeys(Keys.CONTROL);
-            resultOnKeyPressesPage.getText().equals("You entered: CONTROL");
+            resultOnKeyPressesPage.shouldHave(text("You entered: CONTROL"));
             inputOnKeyPressesPage.sendKeys(Keys.ALT);
-            resultOnKeyPressesPage.getText().equals("You entered: ALT");
+            resultOnKeyPressesPage.shouldHave(text("You entered: ALT"));
             inputOnKeyPressesPage.sendKeys(Keys.TAB);
-            resultOnKeyPressesPage.getText().equals("You entered: TAB");
+            resultOnKeyPressesPage.shouldHave(text("You entered: TAB"));
             inputOnKeyPressesPage.sendKeys(Keys.ENTER);
-            resultOnKeyPressesPage.getText().equals("You entered: ENTER");
+            resultOnKeyPressesPage.shouldHave(text("You entered: ENTER"));
         });
     }
 
