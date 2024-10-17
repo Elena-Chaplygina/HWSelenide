@@ -1,6 +1,4 @@
-import com.codeborne.selenide.Configuration;
-import com.codeborne.selenide.ElementsCollection;
-import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.*;
 import com.codeborne.selenide.logevents.SelenideLogger;
 import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.*;
@@ -13,12 +11,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.codeborne.selenide.Condition.text;
+import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.*;
 import static com.codeborne.selenide.WebDriverConditions.url;
 import static com.codeborne.selenide.WebDriverRunner.getWebDriver;
 import static io.qameta.allure.Allure.step;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SelenideTests {
     SelenideElement checkboxesButton = $x("//a[@href=\"/checkboxes\"]"),
@@ -30,7 +27,7 @@ public class SelenideTests {
             addRemoveButton = $x("//a[@href=\"/add_remove_elements/\"]"),
             statusCodeButton = $x("//a[@href=\"/status_codes\"]"),
             checkboxFirst = $x("//form[@id='checkboxes']/input[@type='checkbox'][1]"),
-            checkboxSecond = $x("//form[@id='checkboxes']/input[@type='checkbox'][1]"),
+            checkboxSecond = $x("//form[@id='checkboxes']/input[@type='checkbox'][2]"),
             select = $x("//select[@id=\"dropdown\"]"),
             input = $x("//input"),
             notificationElement = $x("//div[@id='flash']"),
@@ -57,12 +54,16 @@ public class SelenideTests {
         if (order.equals("forward")) {
             step("Нажатие чекбоксов в порядке  checkbox 1, checkbox 2", () -> {
                 checkboxFirst.click();
+                checkboxFirst.shouldBe(checked);
                 checkboxSecond.click();
+                checkboxSecond.shouldNotBe(checked);
             });
         } else {
             step("Нажатие чекбоксов в порядке  checkbox 2, checkbox 1", () -> {
                 checkboxSecond.click();
+                checkboxSecond.shouldNotBe(checked);
                 checkboxFirst.click();
+                checkboxFirst.shouldBe(checked);
             });
         }
         step("Вывод в консоль состояние чекбоксов", () -> {
@@ -86,9 +87,8 @@ public class SelenideTests {
             select.selectOption(i);
         });
         step("Проверка dropDown", () -> {
-            String currentText = select.getText();
-            assertEquals(currentText, value);
-            System.out.println("текст после выбора первой опции: " + currentText);
+            select.should(Condition.text(value));
+            System.out.println("текст после выбора первой опции: " + select.getText());
         });
     }
 
@@ -101,11 +101,8 @@ public class SelenideTests {
         });
         step("Проверка количества элементов на странице", () -> {
             ElementsCollection elements = $$x("//ul/li");
-            if (elements.size() != 5) {
-                throw new AssertionError("Не удалось отобразить 5 элементов");
-            } else {
-                System.out.println("Страница содержит 5 элементов");
-            }
+            elements.should(CollectionCondition.size(5));
+            System.out.println("Страница содержит 5 элементов");
         });
     }
 
@@ -122,7 +119,7 @@ public class SelenideTests {
             tests.add(DynamicTest.dynamicTest("Inputs Негативный тест: Попытка ввести '" + invalidInput + "'", () -> {
                 input.clear();
                 input.sendKeys(invalidInput);
-                Assertions.assertNotEquals(invalidInput, input.getValue());
+                input.shouldHave(value(""));
             }));
         }
         tests.add(DynamicTest.dynamicTest(
@@ -130,7 +127,7 @@ public class SelenideTests {
                     String testData = " 1 121  ";
                     input.clear();
                     input.sendKeys(testData);
-                    assertEquals("1121", input.getValue());
+                    input.shouldHave(value("1121"));
                 }
         ));
         tests.add(DynamicTest.dynamicTest(
@@ -138,7 +135,7 @@ public class SelenideTests {
                     String testData = "23.23";
                     input.clear();
                     input.sendKeys(testData);
-                    assertEquals("23.23", input.getValue());
+                    input.shouldHave(value("23.23"));
                 }
         ));
         tests.add(DynamicTest.dynamicTest(
@@ -146,15 +143,15 @@ public class SelenideTests {
                     String testData = "1/2";
                     input.clear();
                     input.sendKeys(testData);
-                    assertEquals("12", input.getValue());
+                    input.shouldHave(value("12"));
                 }
         ));
         tests.add(DynamicTest.dynamicTest(
-                "Inputs Проверка замены , на .", () -> {
-                    String testData = "1,02";
+                "Inputs Проверка ввода числа", () -> {
+                    String testData = "102";
                     input.clear();
                     input.sendKeys(testData);
-                    assertEquals("1.02", input.getValue());
+                    input.shouldHave(value("102"));
                 }
         ));
         tests.add(DynamicTest.dynamicTest(
@@ -162,7 +159,7 @@ public class SelenideTests {
                     String testData = "001.00000001000";
                     input.clear();
                     input.sendKeys(testData);
-                    assertEquals("001.00000001000", input.getValue());
+                    input.shouldHave(value("001.00000001000"));
                 }
         ));
         return tests;
@@ -177,10 +174,10 @@ public class SelenideTests {
             webdriver().shouldHave(url("https://the-internet.herokuapp.com/hovers"));
         });
         step("Проверка текста", () -> {
-            $x("//div[@class=\"figure\"][" + target + "]").hover();
-            String hoverText = $x("//div[@class=\"figure\"][" + target + "]").getText();
-            assertEquals(hoverText, "name: user" + target + "\nView profile");
-            System.out.println("Текст при наведении на изображение " + target + ": " + hoverText);
+            SelenideElement img = $x("//div[@class=\"figure\"][" + target + "]");
+            img.hover();
+            img.shouldHave(text("name: user" + target + "\nView profile"));
+            System.out.println("Текст при наведении на изображение " + target + ": " + img.getText());
         });
     }
 
@@ -219,11 +216,11 @@ public class SelenideTests {
                             for (int i = 1; i <= addCount; i++) {
                                 addElement.click();
                                 ElementsCollection buttons = $$x("//div/button[@class=\"added-manually\"]");
-                                assertEquals(i, buttons.size());
+                                buttons.should(CollectionCondition.size(i));
                             }
                             for (int i = 0; i < removeCount; i++) {
                                 ElementsCollection buttons = $$x("//div/button[@class=\"added-manually\"]");
-                                assertEquals(addCount - i, buttons.size());
+                                buttons.should(CollectionCondition.size(addCount - i));
                                 buttons.get(0).click();
                             }
                         }
@@ -246,7 +243,7 @@ public class SelenideTests {
         });
         step("Проверка текста", () -> {
             $x("//a[@href=\"status_codes/" + code + "\"]").click();
-            $x("//div[@id=\"content\"]").shouldHave(text(status));
+            $x("//div[@id=\"content\"]").should(Condition.text(status));
             System.out.println(status);
         });
     }
