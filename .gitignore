@@ -11,10 +11,9 @@
 .mtj.tmp/
 
 # Properies files
-*.properties
+
 
 # Package Files #
-*.jar
 *.war
 *.nar
 *.ear
