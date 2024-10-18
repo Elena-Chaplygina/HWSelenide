@@ -37,7 +37,7 @@ public class SelenideTests {
     @BeforeAll
     static void init() {
             Configuration.browser = "chrome";
-            Configuration.remote = "http://localhost:4444/wd/hub";
+            Configuration.remote = "http://89.169.147.50:4444/";
     }
 
     @BeforeEach
