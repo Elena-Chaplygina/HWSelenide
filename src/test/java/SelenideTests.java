@@ -34,6 +34,12 @@ public class SelenideTests {
             addElement = $x("//button[@onclick=\"addElement()\"]");
 
 
+    @BeforeAll
+    static void init() {
+            Configuration.browser = "chrome";
+            Configuration.remote = "http://localhost:4444/wd/hub";
+    }
+
     @BeforeEach
     void setup() {
         Configuration.browser = "chrome";
