@@ -1,7 +1,6 @@
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
-import com.codeborne.selenide.ex.ElementNotFound;
 import com.codeborne.selenide.logevents.SelenideLogger;
 import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.AfterEach;
@@ -9,8 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
-
-import java.time.Duration;
 
 import static com.codeborne.selenide.Condition.text;
 import static com.codeborne.selenide.Condition.visible;
@@ -93,7 +90,7 @@ public class InternetTests {
         });
         step("Поиск выражения", () -> {
             boolean isContainText = false;
-            int attempt=0;
+            int attempt = 0;
             while (!textOnScrollPage.last().getText().contains("Eius") && attempt < 20) {
                 actions().scrollToElement(infiniteScrollPageFooter).perform();
                 isContainText = textOnScrollPage.last().getText().contains("Eius");
